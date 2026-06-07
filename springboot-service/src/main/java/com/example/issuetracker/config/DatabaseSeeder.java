@@ -17,15 +17,18 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final StatusRepository statusRepository;
     private final IssueRepository issueRepository;
     private final IssueService issueService;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     public DatabaseSeeder(UserRepository userRepository, 
                           StatusRepository statusRepository, 
                           IssueRepository issueRepository,
-                          IssueService issueService) {
+                          IssueService issueService,
+                          org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.statusRepository = statusRepository;
         this.issueRepository = issueRepository;
         this.issueService = issueService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -37,10 +40,10 @@ public class DatabaseSeeder implements CommandLineRunner {
         System.out.println("Seeding database...");
 
         // 1. Seed Users
-        User admin = User.builder().username("admin").email("admin@example.com").password("password123").role("Admin").build();
-        User john = User.builder().username("john_dev").email("john@example.com").password("password123").role("Developer").build();
-        User sarah = User.builder().username("sarah_dev").email("sarah@example.com").password("password123").role("Developer").build();
-        User mike = User.builder().username("mike_sub").email("mike@example.com").password("password123").role("Submitter").build();
+        User admin = User.builder().username("admin").email("admin@example.com").password(passwordEncoder.encode("password123")).role("Admin").build();
+        User john = User.builder().username("john_dev").email("john@example.com").password(passwordEncoder.encode("password123")).role("Developer").build();
+        User sarah = User.builder().username("sarah_dev").email("sarah@example.com").password(passwordEncoder.encode("password123")).role("Developer").build();
+        User mike = User.builder().username("mike_sub").email("mike@example.com").password(passwordEncoder.encode("password123")).role("Submitter").build();
 
         userRepository.save(admin);
         userRepository.save(john);

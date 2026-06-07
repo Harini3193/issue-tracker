@@ -144,3 +144,52 @@ def get_logs(issue_id: int, request: Request):
     resp = requests.get(f"{NODEJS_URL}/api/logs/{issue_id}", headers=get_forward_headers(request))
     return Response(content=resp.content, status_code=resp.status_code, media_type=resp.headers.get("content-type"))
 
+# ==========================================
+# NATIVE ENDPOINTS (Vector Search)
+# ==========================================
+
+@app.post("/api/embeddings")
+def index_issue_text(data: EmbeddingCreate):
+    from database import db_adapter
+    vector = vector_engine.text_to_vector(data.text)
+    saved = db_adapter.save_embedding(data.issue_id, data.text, vector)
+    return {
+        "issue_id": saved["issue_id"],
+        "text_preview": saved["text"][:50] + "..." if len(saved["text"]) > 50 else saved["text"],
+        "vector_dimensions": len(saved["vector"])
+    }
+
+@app.get("/api/search")
+@app.get("/api/issues/search")
+def search_issues(request: Request, query: str = Query(..., description="The query to search issues semantically"), limit: int = 10):
+    from database import db_adapter
+    if not query.strip():
+        return []
+    query_vector = vector_engine.text_to_vector(query)
+    all_embeddings = db_adapter.get_all_embeddings()
+    if not all_embeddings:
+        return []
+        
+    results = []
+    for item in all_embeddings:
+        score = vector_engine.cosine_similarity(query_vector, item["vector"])
+        if score > 0.05:
+            results.append({
+                "issue_id": item["issue_id"],
+                "score": round(score, 4)
+            })
+    results.sort(key=lambda x: x["score"], reverse=True)
+    results = results[:limit]
+    
+    enriched_results = []
+    for r in results:
+        issue_id = r["issue_id"]
+        resp = requests.get(f"{SPRING_BOOT_URL}/api/issues/{issue_id}", headers=get_forward_headers(request))
+        if resp.status_code == 200:
+            enriched_results.append({
+                "issue": resp.json(),
+                "score": r["score"]
+            })
+            
+    return enriched_results
+

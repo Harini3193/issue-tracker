@@ -10,8 +10,11 @@ start "FastAPI Service" cmd /k "cd /d %~dp0fastapi-service && call venv\Scripts\
 echo Starting Frontend...
 start "Frontend" cmd /k "cd /d %~dp0frontend && npm run dev"
 
+echo Starting Node.js Service...
+start "Node.js Service" cmd /k "cd /d %~dp0nodejs-service && node server.js"
+
 echo.
 echo All services have been started in separate windows! 
 echo You can now safely close Antigravity and the services will remain running.
-echo To stop the services, simply close the three new command prompt windows that opened.
+echo To stop the services, simply close the four new command prompt windows that opened.
 pause
