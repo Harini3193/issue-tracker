@@ -1,0 +1,24 @@
+# Node
+node_modules/
+dist/
+.env
+
+# Python
+__pycache__/
+venv/
+*.pyc
+
+# Java / Spring Boot
+target/
+.mvn/
+mvnw
+mvnw.cmd
+.classpath
+.factorypath
+.project
+.settings/
+
+# IDE
+.idea/
+.vscode/
+*.iml
