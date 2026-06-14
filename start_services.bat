@@ -15,6 +15,6 @@ start "Node.js Service" cmd /k "cd /d %~dp0nodejs-service && node server.js"
 
 echo.
 echo All services have been started in separate windows! 
-echo You can now safely close Antigravity and the services will remain running.
+echo You can now safely close this terminal and the services will remain running.
 echo To stop the services, simply close the four new command prompt windows that opened.
 pause
