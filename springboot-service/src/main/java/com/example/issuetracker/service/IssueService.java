@@ -17,10 +17,12 @@ public class IssueService {
 
     private final IssueRepository issueRepository;
     private final FastApiClient fastApiClient;
+    private final EmailService emailService;
 
-    public IssueService(IssueRepository issueRepository, FastApiClient fastApiClient) {
+    public IssueService(IssueRepository issueRepository, FastApiClient fastApiClient, EmailService emailService) {
         this.issueRepository = issueRepository;
         this.fastApiClient = fastApiClient;
+        this.emailService = emailService;
     }
 
     public List<Issue> getAllIssues() {
@@ -33,6 +35,18 @@ public class IssueService {
 
     @Transactional
     public Issue createIssue(Issue issue) {
+        // Calculate SLA Deadline based on priority
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        if ("Critical".equalsIgnoreCase(issue.getPriority())) {
+            issue.setSlaDeadline(now.plusHours(4));
+        } else if ("High".equalsIgnoreCase(issue.getPriority())) {
+            issue.setSlaDeadline(now.plusDays(1));
+        } else if ("Medium".equalsIgnoreCase(issue.getPriority())) {
+            issue.setSlaDeadline(now.plusDays(3));
+        } else {
+            issue.setSlaDeadline(now.plusDays(7)); // Low or default
+        }
+
         Issue savedIssue = issueRepository.save(issue);
         
         // Index issue description and title in FastAPI for vector search
@@ -40,7 +54,17 @@ public class IssueService {
         fastApiClient.indexIssue(savedIssue.getId(), indexText);
 
         // Write activity log to FastAPI (MongoDB)
-        String creatorName = savedIssue.getCreatedBy() != null ? savedIssue.getCreatedBy().getUsername() : "System";
+        String creatorName = "System";
+        if (savedIssue.getCreatedBy() != null && savedIssue.getCreatedBy().getId() != null) {
+            // Since we don't have UserRepository injected, we can just use the provided issue object if it has username, 
+            // otherwise we fall back to System or User #ID.
+            if (savedIssue.getCreatedBy().getUsername() != null) {
+                creatorName = savedIssue.getCreatedBy().getUsername();
+            } else {
+                creatorName = "User #" + savedIssue.getCreatedBy().getId();
+            }
+        }
+
         LogDto logDto = LogDto.builder()
                 .issue_id(savedIssue.getId())
                 .action("CREATED")
@@ -72,6 +96,24 @@ public class IssueService {
             needsReindex = true;
         }
 
+        if (issue.getCategory() == null || !issue.getCategory().equals(issueDetails.getCategory())) {
+            logDetails.append(" Category changed.");
+            issue.setCategory(issueDetails.getCategory());
+        }
+
+        if (issue.getPriority() == null || !issue.getPriority().equals(issueDetails.getPriority())) {
+            logDetails.append(" Priority changed.");
+            issue.setPriority(issueDetails.getPriority());
+        }
+
+        if (issueDetails.getResolutionNotes() != null && !issueDetails.getResolutionNotes().equals(issue.getResolutionNotes())) {
+            logDetails.append(" Resolution notes updated.");
+            issue.setResolutionNotes(issueDetails.getResolutionNotes());
+            if (issue.getResolvedAt() == null) {
+                issue.setResolvedAt(java.time.LocalDateTime.now());
+            }
+        }
+
         if (!issue.getStatus().getId().equals(issueDetails.getStatus().getId())) {
             logDetails.append(" Status changed from ")
                     .append(issue.getStatus().getName())
@@ -79,6 +121,20 @@ public class IssueService {
                     .append(issueDetails.getStatus().getName())
                     .append(".");
             issue.setStatus(issueDetails.getStatus());
+            if (issueDetails.getStatus().getName().equalsIgnoreCase("RESOLVED") || issueDetails.getStatus().getName().equalsIgnoreCase("CLOSED")) {
+                if (issue.getResolvedAt() == null) {
+                    issue.setResolvedAt(java.time.LocalDateTime.now());
+                }
+            }
+            
+            // Send email on status change
+            if (issue.getCreatedBy() != null && issue.getCreatedBy().getEmail() != null) {
+                emailService.sendEmail(
+                    issue.getCreatedBy().getEmail(),
+                    "Issue Status Updated: " + issue.getTitle(),
+                    "Your issue #" + issue.getId() + " status was changed to " + issueDetails.getStatus().getName()
+                );
+            }
         }
 
         if ((issue.getAssignedTo() == null && issueDetails.getAssignedTo() != null) ||
@@ -90,6 +146,14 @@ public class IssueService {
             String newAssignee = issueDetails.getAssignedTo() != null ? issueDetails.getAssignedTo().getUsername() : "Unassigned";
             logDetails.append(" Assignee changed from ").append(oldAssignee).append(" to ").append(newAssignee).append(".");
             issue.setAssignedTo(issueDetails.getAssignedTo());
+            
+            if (issueDetails.getAssignedTo() != null) {
+                emailService.sendEmail(
+                    issueDetails.getAssignedTo().getEmail(), 
+                    "Issue Assigned: " + issue.getTitle(), 
+                    "You have been assigned to issue #" + issue.getId()
+                );
+            }
         }
 
         Issue updatedIssue = issueRepository.save(issue);
@@ -126,6 +190,30 @@ public class IssueService {
                 .performed_by("System")
                 .build();
         fastApiClient.addLog(logDto);
+    }
+
+    @Transactional
+    public Issue submitFeedback(Long id, Integer rating, String feedback, String username) {
+        Issue issue = issueRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Issue not found for id: " + id));
+        
+        if (!issue.getCreatedBy().getUsername().equals(username)) {
+            throw new RuntimeException("Only the creator can submit feedback.");
+        }
+        
+        issue.setRating(rating);
+        issue.setFeedback(feedback);
+        Issue savedIssue = issueRepository.save(issue);
+        
+        LogDto logDto = LogDto.builder()
+                .issue_id(id)
+                .action("FEEDBACK_SUBMITTED")
+                .details(rating + " stars. " + feedback)
+                .performed_by(username)
+                .build();
+        fastApiClient.addLog(logDto);
+        
+        return savedIssue;
     }
 
     public List<Map<String, Object>> searchIssues(String query) {

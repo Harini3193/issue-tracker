@@ -25,12 +25,14 @@ public class UserController {
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
     private final PasswordEncoder passwordEncoder;
+    private final com.example.issuetracker.repository.IssueRepository issueRepository;
 
-    public UserController(UserRepository userRepository, AuthenticationManager authenticationManager, JwtUtils jwtUtils, PasswordEncoder passwordEncoder) {
+    public UserController(UserRepository userRepository, AuthenticationManager authenticationManager, JwtUtils jwtUtils, PasswordEncoder passwordEncoder, com.example.issuetracker.repository.IssueRepository issueRepository) {
         this.userRepository = userRepository;
         this.authenticationManager = authenticationManager;
         this.jwtUtils = jwtUtils;
         this.passwordEncoder = passwordEncoder;
+        this.issueRepository = issueRepository;
     }
 
     @GetMapping
@@ -86,5 +88,53 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Invalid username or password"));
         }
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateUserProfile(@PathVariable Long id, @RequestBody Map<String, String> updates) {
+        return userRepository.findById(id).map(user -> {
+            if (updates.containsKey("email")) {
+                user.setEmail(updates.get("email"));
+            }
+            if (updates.containsKey("username")) {
+                user.setUsername(updates.get("username"));
+            }
+            if (updates.containsKey("password") && !updates.get("password").isEmpty()) {
+                user.setPassword(passwordEncoder.encode(updates.get("password")));
+            }
+            User updatedUser = userRepository.save(user);
+            updatedUser.setPassword(null);
+            return ResponseEntity.ok(updatedUser);
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+        if (!userRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        User userToDelete = userRepository.findById(id).get();
+        
+        // Find all issues created by this user and reassign them to admin (user id 1)
+        List<com.example.issuetracker.model.Issue> createdIssues = issueRepository.findByCreatedBy(userToDelete);
+        User admin = userRepository.findById(1L).orElse(null);
+        if (admin != null) {
+            for (com.example.issuetracker.model.Issue issue : createdIssues) {
+                issue.setCreatedBy(admin);
+                issueRepository.save(issue);
+            }
+        }
+        
+        // Find all issues assigned to this user and set to null
+        List<com.example.issuetracker.model.Issue> assignedIssues = issueRepository.findByAssignedTo(userToDelete);
+        for (com.example.issuetracker.model.Issue issue : assignedIssues) {
+            issue.setAssignedTo(null);
+            issueRepository.save(issue);
+        }
+
+        userRepository.deleteById(id);
+        return ResponseEntity.ok(Map.of("message", "User deleted successfully"));
     }
 }

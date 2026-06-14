@@ -9,4 +9,6 @@ import java.util.List;
 public interface IssueRepository extends JpaRepository<Issue, Long> {
     List<Issue> findAllByOrderByIdDesc();
     List<Issue> findAllByStatusId(Long statusId);
+    List<Issue> findByCreatedBy(com.example.issuetracker.model.User user);
+    List<Issue> findByAssignedTo(com.example.issuetracker.model.User user);
 }

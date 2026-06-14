@@ -39,6 +39,27 @@ public class Issue {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "category")
+    private String category;
+
+    @Column(name = "priority")
+    private String priority;
+
+    @Column(name = "resolution_notes", length = 2000)
+    private String resolutionNotes;
+
+    @Column(name = "resolved_at")
+    private LocalDateTime resolvedAt;
+
+    @Column(name = "sla_deadline")
+    private LocalDateTime slaDeadline;
+
+    @Column(name = "rating")
+    private Integer rating;
+
+    @Column(name = "feedback", length = 1000)
+    private String feedback;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

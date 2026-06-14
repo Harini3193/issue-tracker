@@ -21,8 +21,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-SPRING_BOOT_URL = "http://localhost:8088"
-NODEJS_URL = "http://localhost:3000"
+import os
+
+SPRING_BOOT_URL = os.environ.get("SPRING_BOOT_URL", "http://localhost:8088")
+NODEJS_URL = os.environ.get("NODEJS_URL", "http://localhost:3000")
 
 # --- Pydantic Schemas ---
 class EmbeddingCreate(BaseModel):
@@ -193,3 +195,69 @@ def search_issues(request: Request, query: str = Query(..., description="The que
             
     return enriched_results
 
+@app.get("/api/issues/{issue_id}/similar")
+def get_similar_issues(issue_id: int, request: Request, limit: int = 5):
+    from database import db_adapter
+    all_embeddings = db_adapter.get_all_embeddings()
+    if not all_embeddings:
+        return []
+        
+    target_vector = None
+    for item in all_embeddings:
+        if item["issue_id"] == issue_id:
+            target_vector = item["vector"]
+            break
+            
+    if not target_vector:
+        return []
+        
+    results = []
+    for item in all_embeddings:
+        if item["issue_id"] == issue_id:
+            continue
+        score = vector_engine.cosine_similarity(target_vector, item["vector"])
+        if score > 0.1:
+            results.append({
+                "issue_id": item["issue_id"],
+                "score": round(score, 4)
+            })
+    results.sort(key=lambda x: x["score"], reverse=True)
+    results = results[:limit]
+    
+    enriched_results = []
+    for r in results:
+        resp = requests.get(f"{SPRING_BOOT_URL}/api/issues/{r['issue_id']}", headers=get_forward_headers(request))
+        if resp.status_code == 200:
+            enriched_results.append({
+                "issue": resp.json(),
+                "score": r["score"]
+            })
+            
+    return enriched_results
+
+@app.get("/api/issues/{issue_id}/summary")
+def get_issue_summary(issue_id: int, request: Request):
+    # Mock AI Summarization
+    resp = requests.get(f"{SPRING_BOOT_URL}/api/issues/{issue_id}", headers=get_forward_headers(request))
+    if resp.status_code != 200:
+        raise HTTPException(status_code=404, detail="Issue not found")
+    issue = resp.json()
+    summary = f"AI Summary: This issue titled '{issue.get('title')}' is related to {issue.get('category', 'general')} problems. It was reported by {issue.get('createdBy', {}).get('username', 'a user')}. Immediate attention is suggested to resolve the underlying bug."
+    return {"summary": summary}
+
+@app.get("/api/issues/{issue_id}/prediction")
+def get_issue_prediction(issue_id: int, request: Request):
+    # Mock Resolution Time Prediction
+    resp = requests.get(f"{SPRING_BOOT_URL}/api/issues/{issue_id}", headers=get_forward_headers(request))
+    if resp.status_code != 200:
+        raise HTTPException(status_code=404, detail="Issue not found")
+    issue = resp.json()
+    category = issue.get('category', '')
+    
+    predicted_days = 3
+    if "Critical" in category or "Security" in category:
+        predicted_days = 1
+    elif "Payment" in category:
+        predicted_days = 2
+        
+    return {"predictedResolutionTime": f"{predicted_days} day(s)"}

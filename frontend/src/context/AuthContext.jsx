@@ -3,8 +3,8 @@ import axios from 'axios';
 
 const AuthContext = createContext(null);
 
-// Using API Gateway URL
-const API_URL = 'http://localhost:8000';
+// Support for cloud deployment via environment variable
+const API_URL = import.meta.env.VITE_API_URL || '/api-gateway';
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);

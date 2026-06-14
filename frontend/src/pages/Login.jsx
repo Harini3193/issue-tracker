@@ -48,7 +48,7 @@ const Login = () => {
               value={username} 
               onChange={(e) => setUsername(e.target.value)} 
               required 
-              style={{ paddingLeft: '40px' }}
+              style={{ paddingLeft: '45px' }}
             />
           </div>
 
@@ -61,7 +61,7 @@ const Login = () => {
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)} 
                 required 
-                style={{ paddingLeft: '40px' }}
+                style={{ paddingLeft: '45px' }}
               />
             </div>
           )}
@@ -74,7 +74,7 @@ const Login = () => {
               value={password} 
               onChange={(e) => setPassword(e.target.value)} 
               required 
-              style={{ paddingLeft: '40px' }}
+              style={{ paddingLeft: '45px' }}
             />
           </div>
 

@@ -41,9 +41,9 @@ public class DatabaseSeeder implements CommandLineRunner {
 
         // 1. Seed Users
         User admin = User.builder().username("admin").email("admin@example.com").password(passwordEncoder.encode("password123")).role("Admin").build();
-        User john = User.builder().username("john_dev").email("john@example.com").password(passwordEncoder.encode("password123")).role("Developer").build();
-        User sarah = User.builder().username("sarah_dev").email("sarah@example.com").password(passwordEncoder.encode("password123")).role("Developer").build();
-        User mike = User.builder().username("mike_sub").email("mike@example.com").password(passwordEncoder.encode("password123")).role("Submitter").build();
+        User john = User.builder().username("john_dev").email("john@example.com").password(passwordEncoder.encode("password123")).role("Support Engineer").build();
+        User sarah = User.builder().username("sarah_dev").email("sarah@example.com").password(passwordEncoder.encode("password123")).role("Support Engineer").build();
+        User mike = User.builder().username("mike_sub").email("mike@example.com").password(passwordEncoder.encode("password123")).role("User").build();
 
         userRepository.save(admin);
         userRepository.save(john);
@@ -51,21 +51,27 @@ public class DatabaseSeeder implements CommandLineRunner {
         userRepository.save(mike);
 
         // 2. Seed Statuses
-        Status open = Status.builder().name("OPEN").color("#3b82f6").build(); // blue
-        Status inProgress = Status.builder().name("IN_PROGRESS").color("#eab308").build(); // yellow
-        Status resolved = Status.builder().name("RESOLVED").color("#22c55e").build(); // green
-        Status closed = Status.builder().name("CLOSED").color("#6b7280").build(); // gray
+        Status open = Status.builder().name("OPEN").color("#3b82f6").build(); 
+        Status assigned = Status.builder().name("ASSIGNED").color("#8b5cf6").build(); 
+        Status inProgress = Status.builder().name("IN_PROGRESS").color("#eab308").build(); 
+        Status resolved = Status.builder().name("RESOLVED").color("#22c55e").build(); 
+        Status closed = Status.builder().name("CLOSED").color("#6b7280").build(); 
+        Status reopened = Status.builder().name("REOPENED").color("#ef4444").build(); 
 
         statusRepository.save(open);
+        statusRepository.save(assigned);
         statusRepository.save(inProgress);
         statusRepository.save(resolved);
         statusRepository.save(closed);
+        statusRepository.save(reopened);
 
         // 3. Seed Issues (using service so it indexes in FastAPI vector store)
         Issue issue1 = Issue.builder()
                 .title("Login failure on dashboard")
                 .description("Users report a 500 error when attempting to log in via Google OAuth. Token verification is failing because of a public key mismatch.")
                 .status(open)
+                .category("Login Issues")
+                .priority("Critical")
                 .createdBy(mike)
                 .assignedTo(john)
                 .build();
@@ -74,6 +80,8 @@ public class DatabaseSeeder implements CommandLineRunner {
                 .title("Payment processing timeout during checkout")
                 .description("The UI freezes on Stripe checkout. Backend logs show gateway timeouts and socket leaks under high concurrent load.")
                 .status(inProgress)
+                .category("Payment Issues")
+                .priority("High")
                 .createdBy(mike)
                 .assignedTo(sarah)
                 .build();
@@ -82,6 +90,8 @@ public class DatabaseSeeder implements CommandLineRunner {
                 .title("Memory leak in background runner process")
                 .description("Node.js background workers consume RAM linearly. It appears database client pools are not closing database connections properly.")
                 .status(open)
+                .category("Performance Issues")
+                .priority("Medium")
                 .createdBy(admin)
                 .assignedTo(john)
                 .build();
@@ -90,6 +100,8 @@ public class DatabaseSeeder implements CommandLineRunner {
                 .title("Broken links on onboarding docs page")
                 .description("Onboarding manuals contain outdated links directing to old API endpoints (v1 routes instead of v2 routes). Need updating.")
                 .status(resolved)
+                .category("Other")
+                .priority("Low")
                 .createdBy(mike)
                 .assignedTo(sarah)
                 .build();

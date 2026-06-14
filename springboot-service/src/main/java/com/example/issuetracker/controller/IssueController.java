@@ -62,4 +62,24 @@ public class IssueController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @PostMapping("/{id}/feedback")
+    public ResponseEntity<?> submitFeedback(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> payload) {
+        try {
+            Integer rating = (Integer) payload.get("rating");
+            String feedback = (String) payload.get("feedback");
+            String username = (String) payload.get("username");
+            
+            if (rating == null || username == null) {
+                return ResponseEntity.badRequest().body("Rating and username are required");
+            }
+            
+            Issue updatedIssue = issueService.submitFeedback(id, rating, feedback, username);
+            return ResponseEntity.ok(updatedIssue);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
 }
