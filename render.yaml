@@ -44,6 +44,8 @@ services:
           name: nodejs-service
           type: web
           property: host
+      - key: PYTHON_VERSION
+        value: 3.10.0
 
   # Frontend (Vite/React)
   - type: web
