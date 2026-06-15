@@ -1,0 +1,61 @@
+services:
+  # Spring Boot Service
+  - type: web
+    name: springboot-service
+    env: docker
+    dockerfilePath: ./Dockerfile
+    rootDir: springboot-service
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+
+  # Node.js Service (Comments & Logs)
+  - type: web
+    name: nodejs-service
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    rootDir: nodejs-service
+
+  # FastAPI Service (API Gateway & Vector Search)
+  - type: web
+    name: fastapi-service
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    rootDir: fastapi-service
+    envVars:
+      - key: SPRING_BOOT_URL
+        fromService:
+          name: springboot-service
+          type: web
+          property: url
+      - key: NODEJS_URL
+        fromService:
+          name: nodejs-service
+          type: web
+          property: url
+
+  # Frontend (Vite/React)
+  - type: web
+    name: frontend
+    env: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    rootDir: frontend
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          name: fastapi-service
+          type: web
+          property: url
+      - key: VITE_SPRING_URL
+        fromService:
+          name: springboot-service
+          type: web
+          property: url
+      - key: VITE_SOCKET_URL
+        fromService:
+          name: nodejs-service
+          type: web
+          property: url

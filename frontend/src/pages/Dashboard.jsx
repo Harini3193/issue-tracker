@@ -32,7 +32,7 @@ const Dashboard = () => {
     fetchAnalytics();
     
     // Setup WebSocket
-    const socket = io(`http://${window.location.hostname}:3000`);
+    const socket = io(SOCKET_URL);
     socket.on('issue_update', (log) => {
       setToastMessage(`Update: ${log.action.replace('_', ' ')} by ${log.performed_by}`);
       setTimeout(() => setToastMessage(''), 5000);
