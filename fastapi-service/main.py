@@ -61,15 +61,21 @@ def get_users(request: Request):
 
 @app.post("/api/users/login")
 async def login(request: Request):
-    body = await request.body()
-    resp = await asyncio.to_thread(requests.post, f"{SPRING_BOOT_URL}/api/users/login", data=body, headers={"Content-Type": "application/json"})
-    return Response(content=resp.content, status_code=resp.status_code, media_type=resp.headers.get("content-type"))
+    try:
+        body = await request.body()
+        resp = await asyncio.to_thread(requests.post, f"{SPRING_BOOT_URL}/api/users/login", data=body, headers={"Content-Type": "application/json"}, timeout=10)
+        return Response(content=resp.content, status_code=resp.status_code, media_type=resp.headers.get("content-type"))
+    except Exception as e:
+        return Response(content=f'{{"message": "Gateway Error: Could not connect to Spring Boot. Details: {str(e)}"}}', status_code=502, media_type="application/json")
 
 @app.post("/api/users/signup")
 async def signup(request: Request):
-    body = await request.body()
-    resp = await asyncio.to_thread(requests.post, f"{SPRING_BOOT_URL}/api/users/signup", data=body, headers={"Content-Type": "application/json"})
-    return Response(content=resp.content, status_code=resp.status_code, media_type=resp.headers.get("content-type"))
+    try:
+        body = await request.body()
+        resp = await asyncio.to_thread(requests.post, f"{SPRING_BOOT_URL}/api/users/signup", data=body, headers={"Content-Type": "application/json"}, timeout=10)
+        return Response(content=resp.content, status_code=resp.status_code, media_type=resp.headers.get("content-type"))
+    except Exception as e:
+        return Response(content=f'{{"message": "Gateway Error: Could not connect to Spring Boot. Details: {str(e)}"}}', status_code=502, media_type="application/json")
 
 @app.get("/api/status")
 def get_status(request: Request):
