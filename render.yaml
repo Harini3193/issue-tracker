@@ -2,6 +2,7 @@ services:
   # Spring Boot Service
   - type: web
     name: springboot-service
+    plan: free
     env: docker
     dockerfilePath: ./Dockerfile
     rootDir: springboot-service
@@ -12,6 +13,7 @@ services:
   # Node.js Service (Comments & Logs)
   - type: web
     name: nodejs-service
+    plan: free
     env: node
     buildCommand: npm install
     startCommand: npm start
@@ -20,6 +22,7 @@ services:
   # FastAPI Service (API Gateway & Vector Search)
   - type: web
     name: fastapi-service
+    plan: free
     env: python
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
