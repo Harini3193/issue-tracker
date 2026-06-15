@@ -26,8 +26,8 @@ import os
 SPRING_BOOT_HOST = os.environ.get("SPRING_BOOT_HOST", "")
 NODEJS_HOST = os.environ.get("NODEJS_HOST", "")
 
-SPRING_BOOT_URL = f"http://{SPRING_BOOT_HOST}" if SPRING_BOOT_HOST else os.environ.get("SPRING_BOOT_URL", "http://localhost:8088")
-NODEJS_URL = f"http://{NODEJS_HOST}" if NODEJS_HOST else os.environ.get("NODEJS_URL", "http://localhost:3000")
+SPRING_BOOT_URL = f"https://{SPRING_BOOT_HOST}" if SPRING_BOOT_HOST and "onrender.com" in SPRING_BOOT_HOST else f"http://{SPRING_BOOT_HOST}" if SPRING_BOOT_HOST else os.environ.get("SPRING_BOOT_URL", "http://localhost:8088")
+NODEJS_URL = f"https://{NODEJS_HOST}" if NODEJS_HOST and "onrender.com" in NODEJS_HOST else f"http://{NODEJS_HOST}" if NODEJS_HOST else os.environ.get("NODEJS_URL", "http://localhost:3000")
 
 # --- Pydantic Schemas ---
 class EmbeddingCreate(BaseModel):
