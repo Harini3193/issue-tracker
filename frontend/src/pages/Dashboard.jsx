@@ -6,9 +6,9 @@ import { Plus, Search, LogOut, MessageSquare, AlertCircle, BarChart2, Filter, Us
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { io } from 'socket.io-client';
 
-const API_URL = import.meta.env.VITE_API_URL || '/api-gateway';
-const SPRING_URL = import.meta.env.VITE_SPRING_URL || '/spring-api';
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || '/socket.io';
+const API_URL = import.meta.env.VITE_API_HOST ? `https://${import.meta.env.VITE_API_HOST}` : import.meta.env.VITE_API_URL || '/api-gateway';
+const SPRING_URL = import.meta.env.VITE_SPRING_HOST ? `https://${import.meta.env.VITE_SPRING_HOST}` : import.meta.env.VITE_SPRING_URL || '/spring-api';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_HOST ? `https://${import.meta.env.VITE_SOCKET_HOST}` : import.meta.env.VITE_SOCKET_URL || '/socket.io';
 
 const Dashboard = () => {
   const [issues, setIssues] = useState([]);

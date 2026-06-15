@@ -4,7 +4,7 @@ import axios from 'axios';
 const AuthContext = createContext(null);
 
 // Support for cloud deployment via environment variable
-const API_URL = import.meta.env.VITE_API_URL || '/api-gateway';
+const API_URL = import.meta.env.VITE_API_HOST ? `https://${import.meta.env.VITE_API_HOST}` : import.meta.env.VITE_API_URL || '/api-gateway';
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);

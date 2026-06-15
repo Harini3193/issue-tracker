@@ -6,8 +6,8 @@ import { ArrowLeft, Clock, MessageCircle, Send, CheckCircle, AlertTriangle, Pape
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
-const API_URL = import.meta.env.VITE_API_URL || '/api-gateway';
-const SPRING_URL = import.meta.env.VITE_SPRING_URL || '/spring-api';
+const API_URL = import.meta.env.VITE_API_HOST ? `https://${import.meta.env.VITE_API_HOST}` : import.meta.env.VITE_API_URL || '/api-gateway';
+const SPRING_URL = import.meta.env.VITE_SPRING_HOST ? `https://${import.meta.env.VITE_SPRING_HOST}` : import.meta.env.VITE_SPRING_URL || '/spring-api';
 
 const IssueDetail = () => {
   const { id } = useParams();
