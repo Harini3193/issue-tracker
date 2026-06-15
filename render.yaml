@@ -10,17 +10,11 @@ services:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
       - key: SPRING_DATASOURCE_URL
-        fromDatabase:
-          name: issuetracker-db
-          property: connectionString
+        sync: false
       - key: SPRING_DATASOURCE_USERNAME
-        fromDatabase:
-          name: issuetracker-db
-          property: user
+        sync: false
       - key: SPRING_DATASOURCE_PASSWORD
-        fromDatabase:
-          name: issuetracker-db
-          property: password
+        sync: false
 
   # Node.js Service (Comments & Logs)
   - type: web
@@ -75,7 +69,3 @@ services:
           type: web
           property: host
 
-databases:
-  - name: issuetracker-db
-    databaseName: issuetracker
-    plan: free
