@@ -9,6 +9,18 @@ services:
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: issuetracker-db
+          property: connectionString
+      - key: SPRING_DATASOURCE_USERNAME
+        fromDatabase:
+          name: issuetracker-db
+          property: user
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: issuetracker-db
+          property: password
 
   # Node.js Service (Comments & Logs)
   - type: web
@@ -62,3 +74,9 @@ services:
           name: nodejs-service
           type: web
           property: host
+
+databases:
+  - name: issuetracker-db
+    databaseName: issuetracker
+    user: postgres
+    plan: free
